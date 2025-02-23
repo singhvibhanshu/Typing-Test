@@ -1,1 +1,1 @@
-# wpm-typing-test
+# Typing-Test
