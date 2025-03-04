@@ -29,64 +29,46 @@ class TypingTest:
         self.text = random.choice(self.text_options)
         if difficulty == "easy":
             self.text = self.text.lower()
-        self.words = self.text.split()
-        self.current_word_index = 0
         self.typed_text = ""
         self.start_time = time.time()
         
         self.clear_screen()
+        
         self.label = tk.Label(self.root, text=self.text, font=("Arial", 14), fg="grey")
         self.label.pack(pady=10)
         
-        self.entry = tk.Entry(self.root, font=("Arial", 14))
+        self.entry = tk.Entry(self.root, font=("Arial", 14), width=len(self.text))
         self.entry.pack()
-        self.entry.bind("<space>", self.check_word)
+        self.entry.bind("<KeyRelease>", self.update_display)
         self.entry.focus_set()
         
         self.wpm_label = tk.Label(self.root, text="WPM: 0", font=("Arial", 12))
         self.wpm_label.pack()
     
-    def check_word(self, event):
-        typed_word = self.entry.get().strip()
-        correct_word = self.words[self.current_word_index]
+    def update_display(self, event):
+        typed_text = self.entry.get()
+        updated_text = ""
         
-        if self.difficulty == "easy":
-            typed_word = typed_word.lower()
-            correct_word = correct_word.lower()
-        
-        if typed_word == correct_word:
-            self.typed_text += correct_word + " "
-        else:
-            self.typed_text += typed_word + " "
-        
-        self.current_word_index += 1
-        self.entry.delete(0, tk.END)
-        
-        self.update_display()
-        
-        if self.current_word_index >= len(self.words):
-            self.show_results()
-    
-    def update_display(self):
-        displayed_text = ""
-        for i, word in enumerate(self.words):
-            if i < self.current_word_index:
-                displayed_text += word + " "
-            elif i == self.current_word_index:
-                displayed_text += "_" * len(word) + " "
+        for i in range(len(self.text)):
+            if i < len(typed_text):
+                color = "black" if typed_text[i] == self.text[i] else "red"
+                updated_text += f"{typed_text[i]}"
             else:
-                displayed_text += word + " "
+                updated_text += self.text[i]
         
-        self.label.config(text=displayed_text, fg="grey")
+        self.label.config(text=updated_text, fg="grey")
         
         time_elapsed = max(time.time() - self.start_time, 1)
-        wpm = round((len(self.typed_text) / 5) / (time_elapsed / 60))
+        wpm = round((len(typed_text) / 5) / (time_elapsed / 60))
         self.wpm_label.config(text=f"WPM: {wpm}")
+        
+        if typed_text == self.text:
+            self.show_results()
     
     def show_results(self):
         self.clear_screen()
         total_time = max(time.time() - self.start_time, 1)
-        final_wpm = round((len(self.typed_text) / 5) / (total_time / 60))
+        final_wpm = round((len(self.text) / 5) / (total_time / 60))
         
         result_label = tk.Label(self.root, text=f"Typing Test Completed!\nFinal WPM: {final_wpm}", font=("Arial", 14))
         result_label.pack(pady=10)
