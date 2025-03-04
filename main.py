@@ -15,12 +15,15 @@ def display_text(stdscr, target, current, wpm):
     stdscr.addstr(target + "\n")
     stdscr.addstr(f"WPM: {wpm}\n")
     
-    for i, char in enumerate(current):
-        if i < len(target):
-            color = curses.color_pair(1 if char == target[i] else 2)
+    target_words = target.split()
+    current_words = "".join(current).split()
+    
+    for i, word in enumerate(current_words):
+        if i < len(target_words):
+            color = curses.color_pair(1 if word == target_words[i] else 2)
         else:
-            color = curses.color_pair(2)  # Extra characters are always incorrect
-        stdscr.addstr(char, color)
+            color = curses.color_pair(2)
+        stdscr.addstr(word + " ", color)
 
 def load_text(mode):
     with open("text.txt", "r") as f:
@@ -42,7 +45,7 @@ def wpm_test(stdscr, mode):
     stdscr.nodelay(True)
 
     while True:
-        wpm = round((len(current_text) / max((time.time() - start_time) / 60, 1)) / 5)
+        wpm = round((len("".join(current_text)) / max((time.time() - start_time) / 60, 1)) / 5)
         display_text(stdscr, target_text, current_text, wpm)
         stdscr.refresh()
 
@@ -61,9 +64,9 @@ def wpm_test(stdscr, mode):
                 current_text.append(key.lower())
             else:
                 current_text.append(key)
-        
-        if "".join(current_text) == target_text:
-            break  # Exit when correctly typed
+
+        if len("".join(current_text)) >= len(target_text):
+            break  # Exit when typed enough characters
 
     # Calculate final WPM
     total_time = max(time.time() - start_time, 1)
