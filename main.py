@@ -1,99 +1,107 @@
-import curses
+import tkinter as tk
 import time
 import random
 
-def start_screen(stdscr):
-    stdscr.clear()
-    stdscr.addstr("Welcome to the Speed Typing Test!\n")
-    stdscr.addstr("Choose difficulty: [1] Easy | [2] Medium | [3] Hard\n")
-    stdscr.refresh()
-    key = stdscr.getkey()
-    return key
-
-def display_text(stdscr, target, current, wpm):
-    stdscr.clear()
-    stdscr.addstr(target + "\n")
-    stdscr.addstr(f"WPM: {wpm}\n")
+class TypingTest:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Speed Typing Test")
+        self.text_options = self.load_texts()
+        
+        self.create_start_screen()
     
-    target_words = target.split()
-    current_words = "".join(current).split()
+    def create_start_screen(self):
+        self.clear_screen()
+        self.label = tk.Label(self.root, text="Choose Difficulty:", font=("Arial", 14))
+        self.label.pack(pady=10)
+        
+        self.easy_button = tk.Button(self.root, text="Easy", command=lambda: self.start_test("easy"))
+        self.easy_button.pack()
+        
+        self.medium_button = tk.Button(self.root, text="Medium", command=lambda: self.start_test("medium"))
+        self.medium_button.pack()
+        
+        self.hard_button = tk.Button(self.root, text="Hard", command=lambda: self.start_test("hard"))
+        self.hard_button.pack()
     
-    for i, word in enumerate(current_words):
-        if i < len(target_words):
-            color = curses.color_pair(1 if word == target_words[i] else 2)
+    def start_test(self, difficulty):
+        self.difficulty = difficulty
+        self.text = random.choice(self.text_options)
+        if difficulty == "easy":
+            self.text = self.text.lower()
+        self.words = self.text.split()
+        self.current_word_index = 0
+        self.typed_text = ""
+        self.start_time = time.time()
+        
+        self.clear_screen()
+        self.label = tk.Label(self.root, text=self.text, font=("Arial", 14), fg="grey")
+        self.label.pack(pady=10)
+        
+        self.entry = tk.Entry(self.root, font=("Arial", 14))
+        self.entry.pack()
+        self.entry.bind("<space>", self.check_word)
+        self.entry.focus_set()
+        
+        self.wpm_label = tk.Label(self.root, text="WPM: 0", font=("Arial", 12))
+        self.wpm_label.pack()
+    
+    def check_word(self, event):
+        typed_word = self.entry.get().strip()
+        correct_word = self.words[self.current_word_index]
+        
+        if self.difficulty == "easy":
+            typed_word = typed_word.lower()
+            correct_word = correct_word.lower()
+        
+        if typed_word == correct_word:
+            self.typed_text += correct_word + " "
         else:
-            color = curses.color_pair(2)
-        stdscr.addstr(word + " ", color)
-
-def load_text(mode):
-    with open("text.txt", "r") as f:
-        lines = f.readlines()
-        text = random.choice(lines).strip()
+            self.typed_text += typed_word + " "
+        
+        self.current_word_index += 1
+        self.entry.delete(0, tk.END)
+        
+        self.update_display()
+        
+        if self.current_word_index >= len(self.words):
+            self.show_results()
     
-    if mode == "1":  # Easy mode (ignore case sensitivity)
-        return text.lower()
-    elif mode == "2":  # Medium mode (case-sensitive)
-        return text
-    elif mode == "3":  # Hard mode (include symbols)
-        return text + "!@#$%^&*()"  # Add some random symbols for difficulty
-    return text
-
-def wpm_test(stdscr, mode):
-    target_text = load_text(mode)
-    current_text = []
-    start_time = time.time()
-    stdscr.nodelay(True)
-
-    while True:
-        wpm = round((len("".join(current_text)) / max((time.time() - start_time) / 60, 1)) / 5)
-        display_text(stdscr, target_text, current_text, wpm)
-        stdscr.refresh()
-
-        try:
-            key = stdscr.getkey()
-        except curses.error:
-            continue
-
-        if key in ("KEY_BACKSPACE", "\b", "\x7f"):
-            if current_text:
-                current_text.pop()
-        elif key == "\x1b":
-            return  # Exit on ESC
-        else:
-            if mode == "1":  # Easy mode ignores case sensitivity
-                current_text.append(key.lower())
+    def update_display(self):
+        displayed_text = ""
+        for i, word in enumerate(self.words):
+            if i < self.current_word_index:
+                displayed_text += word + " "
+            elif i == self.current_word_index:
+                displayed_text += "_" * len(word) + " "
             else:
-                current_text.append(key)
-
-        if len("".join(current_text)) >= len(target_text):
-            break  # Exit when typed enough characters
-
-    # Calculate final WPM
-    total_time = max(time.time() - start_time, 1)
-    final_wpm = round((len(target_text) / (total_time / 60)) / 5)
-    
-    stdscr.nodelay(False)  # Disable nodelay before showing completion message
-    stdscr.clear()
-    display_text(stdscr, target_text, current_text, final_wpm)
-    stdscr.addstr(f"\nYou completed the text!\nYour final WPM: {final_wpm}\n")
-    stdscr.addstr("Press any key to continue or ESC to quit...")
-    stdscr.refresh()
-    stdscr.getkey()
-
-def main(stdscr):
-    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    
-    mode = start_screen(stdscr)
-    while True:
-        wpm_test(stdscr, mode)
+                displayed_text += word + " "
         
-        try:
-            key = stdscr.getkey()
-        except curses.error:
-            continue
+        self.label.config(text=displayed_text, fg="grey")
         
-        if key == "\x1b":
-            break
+        time_elapsed = max(time.time() - self.start_time, 1)
+        wpm = round((len(self.typed_text) / 5) / (time_elapsed / 60))
+        self.wpm_label.config(text=f"WPM: {wpm}")
+    
+    def show_results(self):
+        self.clear_screen()
+        total_time = max(time.time() - self.start_time, 1)
+        final_wpm = round((len(self.typed_text) / 5) / (total_time / 60))
+        
+        result_label = tk.Label(self.root, text=f"Typing Test Completed!\nFinal WPM: {final_wpm}", font=("Arial", 14))
+        result_label.pack(pady=10)
+        
+        restart_button = tk.Button(self.root, text="Restart", command=self.create_start_screen)
+        restart_button.pack()
+    
+    def load_texts(self):
+        return ["The quick brown fox jumps over the lazy dog", "Practice makes perfect", "Speed typing is fun and challenging"]
+    
+    def clear_screen(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-curses.wrapper(main)
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TypingTest(root)
+    root.mainloop()
