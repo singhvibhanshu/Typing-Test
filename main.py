@@ -15,7 +15,10 @@ def display_text(stdscr, target, current, wpm):
     stdscr.addstr(f"WPM: {wpm}\n")
     
     for i, char in enumerate(current):
-        color = curses.color_pair(1 if char == target[i] else 2)
+        if i < len(target):
+            color = curses.color_pair(1 if char == target[i] else 2)
+        else:
+            color = curses.color_pair(2)  # Extra characters are always incorrect
         stdscr.addstr(char, color)
 
 def load_text():
@@ -28,7 +31,7 @@ def wpm_test(stdscr):
     start_time = time.time()
     stdscr.nodelay(True)
 
-    while "".join(current_text) != target_text:
+    while True:
         wpm = round((len(current_text) / max((time.time() - start_time) / 60, 1)) / 5)
         display_text(stdscr, target_text, current_text, wpm)
         stdscr.refresh()
@@ -43,8 +46,11 @@ def wpm_test(stdscr):
                 current_text.pop()
         elif key == "\x1b":
             return  # Exit on ESC
-        elif len(current_text) < len(target_text):
+        else:
             current_text.append(key)
+        
+        if "".join(current_text) == target_text:
+            break  # Exit when correctly typed
 
     # Calculate final WPM
     total_time = max(time.time() - start_time, 1)
