@@ -35,7 +35,7 @@ def wpm_test(stdscr):
 
         try:
             key = stdscr.getkey()
-        except:
+        except curses.error:
             continue
 
         if key in ("KEY_BACKSPACE", "\b", "\x7f"):
@@ -54,7 +54,13 @@ def main(stdscr):
     while True:
         wpm_test(stdscr)
         stdscr.addstr("\nYou completed the text! Press any key to continue or ESC to quit...")
-        if stdscr.getkey() == "\x1b":
+        
+        try:
+            key = stdscr.getkey()
+        except curses.error:
+            continue
+        
+        if key == "\x1b":
             break
 
 curses.wrapper(main)
