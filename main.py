@@ -46,10 +46,15 @@ def wpm_test(stdscr):
         elif len(current_text) < len(target_text):
             current_text.append(key)
 
+    # Calculate final WPM
+    total_time = max(time.time() - start_time, 1)
+    final_wpm = round((len(target_text) / (total_time / 60)) / 5)
+    
     stdscr.nodelay(False)  # Disable nodelay before showing completion message
     stdscr.clear()
-    display_text(stdscr, target_text, current_text, wpm)
-    stdscr.addstr("\nYou completed the text! Press any key to continue or ESC to quit...")
+    display_text(stdscr, target_text, current_text, final_wpm)
+    stdscr.addstr(f"\nYou completed the text!\nYour final WPM: {final_wpm}\n")
+    stdscr.addstr("Press any key to continue or ESC to quit...")
     stdscr.refresh()
     stdscr.getkey()
 
