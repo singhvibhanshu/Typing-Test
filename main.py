@@ -5,9 +5,10 @@ import random
 def start_screen(stdscr):
     stdscr.clear()
     stdscr.addstr("Welcome to the Speed Typing Test!\n")
-    stdscr.addstr("Press any key to begin!")
+    stdscr.addstr("Choose difficulty: [1] Easy | [2] Medium | [3] Hard\n")
     stdscr.refresh()
-    stdscr.getkey()
+    key = stdscr.getkey()
+    return key
 
 def display_text(stdscr, target, current, wpm):
     stdscr.clear()
@@ -21,12 +22,21 @@ def display_text(stdscr, target, current, wpm):
             color = curses.color_pair(2)  # Extra characters are always incorrect
         stdscr.addstr(char, color)
 
-def load_text():
+def load_text(mode):
     with open("text.txt", "r") as f:
-        return random.choice(f.readlines()).strip()
+        lines = f.readlines()
+        text = random.choice(lines).strip()
+    
+    if mode == "1":  # Easy mode (ignore case sensitivity)
+        return text.lower()
+    elif mode == "2":  # Medium mode (case-sensitive)
+        return text
+    elif mode == "3":  # Hard mode (include symbols)
+        return text + "!@#$%^&*()"  # Add some random symbols for difficulty
+    return text
 
-def wpm_test(stdscr):
-    target_text = load_text()
+def wpm_test(stdscr, mode):
+    target_text = load_text(mode)
     current_text = []
     start_time = time.time()
     stdscr.nodelay(True)
@@ -47,7 +57,10 @@ def wpm_test(stdscr):
         elif key == "\x1b":
             return  # Exit on ESC
         else:
-            current_text.append(key)
+            if mode == "1":  # Easy mode ignores case sensitivity
+                current_text.append(key.lower())
+            else:
+                current_text.append(key)
         
         if "".join(current_text) == target_text:
             break  # Exit when correctly typed
@@ -68,9 +81,9 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
     
-    start_screen(stdscr)
+    mode = start_screen(stdscr)
     while True:
-        wpm_test(stdscr)
+        wpm_test(stdscr, mode)
         
         try:
             key = stdscr.getkey()
