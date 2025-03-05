@@ -18,9 +18,10 @@ class TypingTest:
         tk.Button(self.root, text="Hard", command=lambda: self.start_test("hard")).pack()
 
     def start_test(self, difficulty):
-        self.difficulty = difficulty  # Store difficulty level
-        self.text = random.choice(self.text_options[difficulty])  # Choose difficulty-specific text
+        self.difficulty = difficulty
+        self.text = random.choice(self.text_options[difficulty])
         self.start_time = time.time()
+        self.correct_characters = 0  # Track correct characters
 
         self.clear_screen()
         
@@ -29,6 +30,7 @@ class TypingTest:
 
         self.entry = tk.Entry(self.root, font=("Arial", 14), width=50)
         self.entry.pack()
+        self.entry.bind("<KeyRelease>", self.update_wpm)  # Update WPM on each key release
         self.entry.bind("<space>", self.process_word)
         self.entry.bind("<Return>", self.process_word)
         self.entry.focus_set()
@@ -36,8 +38,8 @@ class TypingTest:
         self.wpm_label = tk.Label(self.root, text="WPM: 0", font=("Arial", 12))
         self.wpm_label.pack()
 
-        self.typed_words = []  # Store words typed so far
-        self.index = 0         # Track word index
+        self.typed_words = []
+        self.index = 0
 
     def process_word(self, event):
         typed_text = self.entry.get().strip()
@@ -45,50 +47,45 @@ class TypingTest:
 
         if self.index < len(words_original):
             correct_word = words_original[self.index]
-            
+            is_correct = False
+
             if self.difficulty == "easy":
-                # Ignore case sensitivity in easy mode
-                if typed_text.lower() != correct_word.lower():
-                    self.typed_words.append(f"[{typed_text}]")  # Mark incorrect words
-                else:
-                    self.typed_words.append(correct_word)
-            
-            elif self.difficulty == "medium":
-                # Medium mode is case-sensitive
-                if typed_text != correct_word:
-                    self.typed_words.append(f"[{typed_text}]")
-                else:
-                    self.typed_words.append(correct_word)
+                is_correct = typed_text.lower() == correct_word.lower()
+            else:
+                is_correct = typed_text == correct_word
 
-            elif self.difficulty == "hard":
-                # Hard mode is case-sensitive and includes special characters
-                if typed_text != correct_word:
-                    self.typed_words.append(f"[{typed_text}]")
-                else:
-                    self.typed_words.append(correct_word)
+            if is_correct:
+                self.typed_words.append(correct_word)
+                self.correct_characters += len(correct_word)
+            else:
+                self.typed_words.append(f"[{typed_text}]")
 
-            self.index += 1  # Move to the next word
-            self.entry.delete(0, tk.END)  # Clear input field
+            self.index += 1
+            self.entry.delete(0, tk.END)
 
-        # Update displayed text
-        updated_text = " ".join(self.typed_words) + " " + " ".join(words_original[self.index:])
-        self.label.config(text=updated_text, fg="grey")
+            # Update displayed text
+            updated_text = " ".join(self.typed_words) + " " + " ".join(words_original[self.index:])
+            self.label.config(text=updated_text.strip(), fg="grey")
 
-        # Update WPM
-        time_elapsed = max(time.time() - self.start_time, 1)
-        wpm = round((len(" ".join(self.typed_words)) / 5) / (time_elapsed / 60))
-        self.wpm_label.config(text=f"WPM: {wpm}")
+            # Check if all words are typed
+            if self.index >= len(words_original):
+                self.show_results()
 
-        # If all words are typed, finish the test
-        if self.index >= len(words_original):
-            self.show_results()
+    def update_wpm(self, event=None):
+        if hasattr(self, 'start_time'):
+            time_elapsed = max(time.time() - self.start_time, 1)
+            wpm = round((self.correct_characters / 5) / (time_elapsed / 60))
+            self.wpm_label.config(text=f"WPM: {wpm}")
 
     def show_results(self):
         self.clear_screen()
         total_time = max(time.time() - self.start_time, 1)
-        final_wpm = round((len(self.text) / 5) / (total_time / 60))
+        final_wpm = round((self.correct_characters / 5) / (total_time / 60))
 
-        result_label = tk.Label(self.root, text=f"Typing Test Completed!\nFinal WPM: {final_wpm}\nIncorrect Words: {' '.join(self.typed_words)}", font=("Arial", 14))
+        result_text = f"Typing Test Completed!\nFinal WPM: {final_wpm}\n"
+        result_text += f"Incorrect Words: {' '.join([word for word in self.typed_words if word.startswith('[')])}"
+        
+        result_label = tk.Label(self.root, text=result_text, font=("Arial", 14))
         result_label.pack(pady=10)
 
         tk.Button(self.root, text="Restart", command=self.create_start_screen).pack()
