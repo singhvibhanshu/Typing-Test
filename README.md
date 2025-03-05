@@ -27,7 +27,7 @@ cd Typing-Test
 Run the following command to start the typing test:
 
 ```bash
-python typing_test.py
+python main.py
 ```
 
 ## How to Play
@@ -38,16 +38,3 @@ python typing_test.py
 4. The text will change color based on correctness (black for correct, red for incorrect).
 5. Your WPM will be updated in real-time.
 6. Upon completion, the final WPM will be displayed, and you can restart the test.
-
-## Contributing
-
-Feel free to fork this repository and contribute by submitting a pull request.
-
-## License
-
-This project is licensed under the MIT License.
-
-## Author
-
-Vibhanshu Singh
-
