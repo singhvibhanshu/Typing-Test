@@ -18,9 +18,8 @@ class TypingTest:
         tk.Button(self.root, text="Hard", command=lambda: self.start_test("hard")).pack()
 
     def start_test(self, difficulty):
-        self.text = random.choice(self.text_options)
-        if difficulty == "easy":
-            self.text = self.text.lower()
+        self.difficulty = difficulty  # Store difficulty level
+        self.text = random.choice(self.text_options[difficulty])  # Choose difficulty-specific text
         self.start_time = time.time()
 
         self.clear_screen()
@@ -46,10 +45,27 @@ class TypingTest:
 
         if self.index < len(words_original):
             correct_word = words_original[self.index]
-            if typed_text != correct_word:
-                self.typed_words.append(f"[{typed_text}]")  # Mark incorrect words
-            else:
-                self.typed_words.append(typed_text)
+            
+            if self.difficulty == "easy":
+                # Ignore case sensitivity in easy mode
+                if typed_text.lower() != correct_word.lower():
+                    self.typed_words.append(f"[{typed_text}]")  # Mark incorrect words
+                else:
+                    self.typed_words.append(correct_word)
+            
+            elif self.difficulty == "medium":
+                # Medium mode is case-sensitive
+                if typed_text != correct_word:
+                    self.typed_words.append(f"[{typed_text}]")
+                else:
+                    self.typed_words.append(correct_word)
+
+            elif self.difficulty == "hard":
+                # Hard mode is case-sensitive and includes special characters
+                if typed_text != correct_word:
+                    self.typed_words.append(f"[{typed_text}]")
+                else:
+                    self.typed_words.append(correct_word)
 
             self.index += 1  # Move to the next word
             self.entry.delete(0, tk.END)  # Clear input field
@@ -78,7 +94,23 @@ class TypingTest:
         tk.Button(self.root, text="Restart", command=self.create_start_screen).pack()
 
     def load_texts(self):
-        return ["The quick brown fox jumps over the lazy dog", "Practice makes perfect", "Speed typing is fun and challenging"]
+        return {
+            "easy": [
+                "The cat sat on the mat", 
+                "I love to read books", 
+                "Sun is shining bright"
+            ],
+            "medium": [
+                "Typing fast requires consistent Practice.", 
+                "A quick brown Fox jumps over the lazy Dog.", 
+                "Good habits make Learning easier."
+            ],
+            "hard": [
+                "Complex algorithms & data structures optimize performance!", 
+                "AI is revolutionizing the world in 2025 with #DeepLearning.", 
+                "C0d!ng is fun @3AM, but Debugging is a nightmare!"
+            ]
+        }
 
     def clear_screen(self):
         for widget in self.root.winfo_children():
