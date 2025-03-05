@@ -47,23 +47,31 @@ class TypingTest:
     
     def update_display(self, event):
         typed_text = self.entry.get()
-        updated_text = ""
-        
-        for i in range(len(self.text)):
-            if i < len(typed_text):
-                color = "black" if typed_text[i] == self.text[i] else "red"
-                updated_text += f"{typed_text[i]}"
-            else:
-                updated_text += self.text[i]
-        
-        self.label.config(text=updated_text, fg="grey")
-        
+    
+        # Detect when the spacebar is pressed
+        if event.keysym == "space":
+            words_typed = typed_text.split()
+            words_original = self.text.split()
+
+        # Find the index of the last typed word
+            current_word_index = len(words_typed) - 1
+
+        # If the user types a wrong word, allow them to continue
+            if current_word_index < len(words_original):
+                if words_typed[current_word_index] != words_original[current_word_index]:
+                    words_typed[current_word_index] = f"[{words_typed[current_word_index]}]"  # Mark incorrect word
+
+            updated_text = " ".join(words_typed)  # Show the updated typed words
+            remaining_text = " ".join(words_original[len(words_typed):])  # Show the remaining words
+            self.label.config(text=f"{updated_text} {remaining_text}", fg="grey")
+    
         time_elapsed = max(time.time() - self.start_time, 1)
         wpm = round((len(typed_text) / 5) / (time_elapsed / 60))
         self.wpm_label.config(text=f"WPM: {wpm}")
-        
-        if typed_text == self.text:
+
+        if typed_text.strip() == self.text:
             self.show_results()
+
     
     def show_results(self):
         self.clear_screen()
